@@ -250,7 +250,16 @@ class Controller(NotifierMixin, _base.Controller):
         else:
             try:
                 keycode, shift_state = self.keyboard_mapping[keysym]
-                self._send_key(event, keycode, shift_state)
+                with self.modifiers as modifiers:
+                    alt_gr = Key.alt_gr in modifiers
+                if alt_gr:
+                    self._send_key(event, keycode, shift_state)
+                else:
+                    with display_manager(self._display) as dm: 
+                        Xlib.ext.xtest.fake_input(
+                            dm, 
+                            Xlib.X.KeyPress if is_press else Xlib.X.KeyRelease,
+                            keycode)
 
             except KeyError:
                 with self._borrow_lock:
